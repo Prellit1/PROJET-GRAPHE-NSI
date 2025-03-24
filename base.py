@@ -61,7 +61,7 @@ def sign(num):
     return num / abs(num)
 
 
-def initialise_window():
+def initialise_window(title: str):
     """
     Sortie: Fenètre
     Role: crée et renvoie la fenètre du programme
@@ -69,5 +69,5 @@ def initialise_window():
     """
     
     pygame.init()
-    pygame.display.set_caption("Homme Pac")
+    pygame.display.set_caption(title)
     return pygame.display.set_mode( (SCR_X, SCR_Y) )
