@@ -1,3 +1,5 @@
+
+
 class GrapheLs:
     def __init__(self):
         #self.sommets = sommets
@@ -35,36 +37,53 @@ class GrapheLs:
 
 
 class Noeud:
-    def __init__(self, value, coords, links = []):
+    def __init__(self, value, coords, links = None):
         self.value = value
         self.is_visited = False
         self.coords = coords
+        if not links:
+            links = []
         self.links = links
 
+    def render(self, screen, tile, offsX, offsY):
+        screen.blit(tile, (self.coords[0] + offsX, self.coords[1] + offsY))
+        
     def parcours_largeur(self, func = lambda node, retval: retval + node.value, base_retval_value =0):
-        visite = []
         file = [self]
         return_value = base_retval_value
         while file:
             node = file.pop(0)
             return_value = func(node, return_value)
-            for neighbor_and_dist in self.links:
+
+            for neighbor_and_dist in node.links:
                 if not neighbor_and_dist[0].is_visited:
                     file.append(neighbor_and_dist[0])
             node.is_visited = True
         return return_value
+
+    def __repr__(self):
+        return str(self.value)
+    
     
 
 class Graphe:
     def __init__(self, noeud: Noeud):
         self.racine = noeud
         self.liste_noeuds = self.racine.parcours_largeur(lambda node, retval: retval+[node], [])
+        for node in self.liste_noeuds:
+            node.is_visited = False
 
     def parcours_largeur(self, noeud = None, func = lambda node, retval: retval + node.value, base_retval_value =0):
         if not noeud:
             noeud = self.racine
         self.__init__(noeud)
-        return self.racine.parcours_largeur(func, base_retval_value)
+
+        return_value = self.racine.parcours_largeur(func, base_retval_value)
+
+        for node in self.liste_noeuds:
+            node.is_visited = False
+        return return_value
     
 
-        
+    def __repr__(self):
+        return str(self.liste_noeuds)
