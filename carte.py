@@ -1,8 +1,20 @@
 import tile
 from base import SCR_X, SCR_Y
 from pygame.draw import line
+from graphe import Noeud
+
+class Noeud_Carte(Noeud):
+    def __init__(self, value, coords, links = None):
+        super().__init__(value, links)
+        self.coords = coords
+    
+    def render(self, screen, tile, offsX, offsY):
+        screen.blit(tile, (self.coords[0] + offsX, self.coords[1] + offsY))
+
 OFFSX = (SCR_X - (4 * 10 * 8)) // 2 - 16
 OFFSY = (SCR_Y - (4 * 10 * 8)) // 2 - 16
+
+
 class Carte:
     def __init__(self, graphe):
         self.tileset = tile.Tileset("./graphics/builds.png")

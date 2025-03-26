@@ -37,16 +37,12 @@ class GrapheLs:
 
 
 class Noeud:
-    def __init__(self, value, coords, links = None):
+    def __init__(self, value, links = None):
         self.value = value
         self.is_visited = False
-        self.coords = coords
         if not links:
             links = []
         self.links = links
-
-    def render(self, screen, tile, offsX, offsY):
-        screen.blit(tile, (self.coords[0] + offsX, self.coords[1] + offsY))
         
     def parcours_largeur(self, func = lambda node, retval: retval + node.value, base_retval_value =0):
         file = [self]

@@ -8,7 +8,7 @@ BUILD = [[0,(0,2)], [1,(3,4)], [2,(0,4)]]
 
 def generate_map()->g.Graphe:
     listeNoeud = []  
-    while len(listeNoeud) < 4 or len(listeNoeud) > 12:
+    while len(listeNoeud) < 6 or len(listeNoeud) > 12:
         listeNoeud = []  
         for x in range(5):
             for y in range(5):
@@ -21,7 +21,7 @@ def generate_map()->g.Graphe:
                     else:
                         char = BUILD[2][0]
 
-                    listeNoeud.append(g.Noeud(char,((x * 10 + randint(-3,3)) * 8, (y * 10 + randint(-3,3)) * 8)))
+                    listeNoeud.append(carte.Noeud_Carte(char,((x * 10 + randint(-3,3)) * 8, (y * 10 + randint(-3,3)) * 8)))
 
     for noeud in listeNoeud:
         coords1 = noeud.coords
@@ -30,8 +30,8 @@ def generate_map()->g.Graphe:
             if other_noeud != noeud:
                 already_connected_to_a_neighbour = False
                 for n in noeud.links:
-                    for link in n[0].links:
-                        if other_noeud in link:
+                    for linkID in range(len(n[0].links)):
+                        if other_noeud in n[0].links[linkID]:
                             already_connected_to_a_neighbour= True
                 
                 coords2 = other_noeud.coords
@@ -39,6 +39,7 @@ def generate_map()->g.Graphe:
 
                 if dist2 < 200**2 and not already_connected_to_a_neighbour:
                     noeud.links += [(other_noeud, dist2)]
+                
 
     racineID = randint(0, len(listeNoeud)-1)
     #print(len(listeNoeud))
