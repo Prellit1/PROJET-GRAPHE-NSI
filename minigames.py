@@ -109,9 +109,9 @@ class ABR(Graphe):
 
         tile = tileset.get_tile(0,0)
         if self.racine.selected_by_player:
-            tile = tileset.get_tile(1,0)
-        elif self.racine.selected_by_player:
             tile = tileset.get_tile(0,1)
+        elif self.racine.selected_by_game:
+            tile = tileset.get_tile(1,0)
 
         abrG, abrD = self.get_root_left_and_right()
         if abrG:
