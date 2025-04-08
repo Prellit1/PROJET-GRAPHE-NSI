@@ -1,13 +1,13 @@
-#Fichier créé par Ethan CAPONE le 18/09
+# Fichier créé par Ethan CAPONE le 18/09
 
-#Modèle''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+# Modèle''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 """
 Entrée:
 Sortie:
 Role:
 Version : 1.0
 """
-#''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' 
+# '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 import pygame
 from pygame.locals import *
@@ -17,9 +17,9 @@ SCR_Y = 512
 
 
 class EventHandler:
-    def __init__(self,repeat=0,repeatInterval=200):
+    def __init__(self, repeat=0, repeatInterval=200):
         self.pressed = {}
-        pygame.key.set_repeat(repeat,repeatInterval)
+        pygame.key.set_repeat(repeat, repeatInterval)
         
     def update(self):
         """
@@ -36,20 +36,26 @@ class EventHandler:
                 retVal = "QUIT"
                 
             elif ev.type == KEYDOWN:
+                print(ev.key)
                 self.pressed[ev.key] = True
-                
-            
-        #print(self.pressed, retVal)
+
         return retVal
+
 
 def distance2(coords, coords2):
     """
-    Entrée: coords et coords2 : 2 tuples de 2 nombres correspondant a des valeurs X et Y
+    Entrée: coords et coords2 : 2 tuples de 2 nombres
+    correspondant a des valeurs X et Y
+
     Sortie: nombre (distance au carré)
-    Role: Renvoie un nombre correspondant à la distance au carré entre 2 points représenté par les 2 tuples en paramètre
+
+    Role: Renvoie un nombre correspondant à la distance au carré entre 2
+    points représenté par les 2 tuples en paramètre
+
     Version : 1.0
     """
     return (abs(coords[0]-coords2[0]))**2 + (abs(coords[1]-coords2[1]))**2
+
 
 def sign(num):
     """
@@ -70,4 +76,4 @@ def initialise_window(title: str):
     
     pygame.init()
     pygame.display.set_caption(title)
-    return pygame.display.set_mode( (SCR_X, SCR_Y) )
+    return pygame.display.set_mode((SCR_X, SCR_Y))
