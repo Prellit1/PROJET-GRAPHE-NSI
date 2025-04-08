@@ -1,5 +1,4 @@
 import graphe as g
-import util
 import carte
 import base
 import pygame

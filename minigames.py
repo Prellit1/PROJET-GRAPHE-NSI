@@ -55,6 +55,25 @@ class Mini_Jeux:
         self.graphe.render(screen, self.tileset,
                            width_center, start_height, offsX, offsY)
 
+    def handle_command(self, eHndl):
+        retval = {"pressed": {}, "repeated": {}}
+        if eHndl.pressed[K_RIGHT]:
+            retval["pressed"][K_RIGHT] = True
+        elif eHndl.pressed[K_LEFT]:
+            retval["pressed"][K_LEFT] = True
+
+        if eHndl.pressed[K_UP]:
+            retval["pressed"][K_UP] = True
+        elif eHndl.pressed[K_DOWN]:
+            retval["pressed"][K_DOWN] = True
+
+        for repeated in eHndl.press_repeat:
+            if eHndl.press_repeat.get(repeated):
+                retval["repeated"][repeated] = True
+
+        return retval
+
+        
 
 class ABR(Graphe):
     def __init__(self, noeud):
@@ -163,18 +182,20 @@ if __name__ == "__main__":
 
         if MSG == "QUIT":
             loop = False
+        pressed = mini.handle_command(eHndl)["pressed"]
+        if pressed.get(K_RIGHT):
+            offsX -= 4
+        elif pressed.get(K_LEFT):
+            offsX += 4
 
-        print(eHndl.pressed)
-        
-        if eHndl.pressed.get(K_RIGHT, None):
-            offsX -= 1
-        elif eHndl.pressed.get(K_LEFT, None):
-            offsX += 1
+        if pressed.get(K_UP):
+            offsY += 4
+        elif pressed.get(K_DOWN):
+            offsY -= 4
 
-        if eHndl.pressed.get(K_UP, None):
-            offsY += 1
-        elif eHndl.pressed.get(K_DOWN, None):
-            offsY -= 1
+        if eHndl.mouse_down:
+            offsX += eHndl.mouse_offs[0]
+            offsY += eHndl.mouse_offs[1]
 
         fenetre.fill((0, 0, 0))
         mini.render_AB(fenetre, offsX, offsY)

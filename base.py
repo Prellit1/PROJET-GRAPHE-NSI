@@ -18,8 +18,13 @@ SCR_Y = 512
 
 class EventHandler:
     def __init__(self, repeat=0, repeatInterval=200):
+        self.press_repeat = {}
         self.pressed = {}
         pygame.key.set_repeat(repeat, repeatInterval)
+        self.mouse_down = False
+        self.mouse_press_pos = (0, 0)
+        self.mouse_pos = (0, 0)
+        self.mouse_offs = (0, 0)
         
     def update(self):
         """
@@ -28,16 +33,29 @@ class EventHandler:
         Version : 1.0
         """
         self.pressed = {}
+        self.press_repeat = {}
+        self.mouse_offs = (0, 0)
         retVal = "OK"
-        
+
+        self.pressed = pygame.key.get_pressed()
+
         for ev in pygame.event.get():
-            
             if ev.type == QUIT:
-                retVal = "QUIT"
-                
+                retVal = "QUIT"    
             elif ev.type == KEYDOWN:
-                print(ev.key)
-                self.pressed[ev.key] = True
+                self.press_repeat[ev.key] = True
+            elif ev.type == MOUSEBUTTONDOWN:
+                self.mouse_down = True
+                self.mouse_press_pos = ev.pos
+                self.mouse_pos = ev.pos
+            elif ev.type == MOUSEBUTTONUP:
+                self.mouse_down = False
+                self.mouse_offs = (0, 0)
+                self.mouse_pos = ev.pos
+            elif ev.type == MOUSEMOTION:
+                self.mouse_offs = (ev.pos[0] - self.mouse_pos[0],
+                                   ev.pos[1] - self.mouse_pos[1])
+                self.mouse_pos = ev.pos
 
         return retVal
 
