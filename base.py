@@ -24,6 +24,8 @@ class EventHandler:
         self.pressed = {}
         pygame.key.set_repeat(repeat, repeatInterval)
         self.mouse_down = False
+        self.mouse_press = False
+        self.mouse_held = False
         self.mouse_press_pos = (0, 0)
         self.mouse_pos = (0, 0)
         self.mouse_offs = (0, 0)
@@ -58,6 +60,16 @@ class EventHandler:
                 self.mouse_offs = (ev.pos[0] - self.mouse_pos[0],
                                    ev.pos[1] - self.mouse_pos[1])
                 self.mouse_pos = ev.pos
+
+        if self.mouse_down:
+            if not self.mouse_press and not self.mouse_held:
+                self.mouse_press = True
+            else:
+                self.mouse_press = False
+                self.mouse_held = True
+        else:
+            self.mouse_press = False
+            self.mouse_held = False
 
         return retVal
 
@@ -112,3 +124,13 @@ def draw_arrow(surface, color, width, head_width, coords1, coords2):
                  int(coords2[1] - 3 * head_width * vector[1] - head_width * vec_orth[1]))
             ]
     polygon(surface, color, points)
+
+def same_values_between_2_lists(l1, l2):
+    for elem in l1:
+        if elem not in l2:
+            return False
+    for elem in l2:
+        if elem not in l1:
+            return False
+    return True
+        

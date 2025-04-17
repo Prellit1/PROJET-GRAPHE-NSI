@@ -1,8 +1,8 @@
 from graphe import Noeud, Graphe
 from random import randint
-from base import SCR_X, SCR_Y, draw_arrow
+from base import SCR_X, SCR_Y, draw_arrow, distance2, same_values_between_2_lists
 from pygame import K_BACKSPACE, K_LEFT, K_RIGHT, K_UP, K_DOWN, K_RETURN, K_ESCAPE, Rect, Surface, SRCALPHA
-from pygame.key import stop_text_input, start_text_input, set_text_input_rect
+from math import sqrt
 from tile import Tileset
 
 def init_F_somme_ABR():
@@ -12,14 +12,29 @@ def init_F_somme_ABR():
     return abr, ABR(abr.liste_noeuds[random_node])
 
 def check_F_somme_ABR(_, add_data, answer):
-    #answer = input("Somme des valeurs des noeuds du sous arbre du noeud choisi :")
     real_deal = add_data.parcours_largeur()
-    #print(real_deal, answer)
     if answer.isdigit():
         if int(answer) == real_deal:
             return True
     return False
 
+def init_F_somme_GRP():
+    grp = generate_graphe()
+    random = randint(0, len(grp.liste_noeuds) - 1)
+    node = grp.liste_noeuds[random]
+    node.selected_by_game = True
+    return grp, node
+
+def check_F_somme_GRP(_, add_data, answer):
+    sum = add_data.value
+    for node_dist in add_data.links:
+        sum += node_dist[0].value
+
+    if answer.isdigit():
+        if int(answer) == sum:
+            return True
+    return False
+    
 def init_B_insert_ABR():
     abr = generate_AB_graphe()
     leafs = []
@@ -41,6 +56,39 @@ def check_B_insert_ABR(abr, add_data, answer):
             return True
     return False
 
+def init_B_dist_GRP():
+    grp = generate_graphe()
+    while len(grp.liste_noeuds) < 5:
+        grp = generate_graphe()
+    random = randint(0, len(grp.liste_noeuds) - 1)
+    node = grp.liste_noeuds[random]
+    node.selected_by_game = True
+
+    random2 = randint(0, len(grp.liste_noeuds) - 1)
+    while random2 == random:
+        random2 = randint(0, len(grp.liste_noeuds) - 1)
+
+    node2 = grp.liste_noeuds[random2]
+    node2.selected_by_game = True
+    return grp, (node, node2)
+
+def check_B_dist_GRP(grp, add_data, _):
+    selected_nodes = []
+    for node in grp.liste_noeuds:
+        if node.selected_by_player or node.selected_by_game:
+            selected_nodes.append(node)
+
+    # 1er noeud en point de départ et 2e en arrivé
+    chemin = grp.dijkstra(add_data[0])[1][add_data[1]]
+    win = same_values_between_2_lists(selected_nodes, chemin)
+
+    # 2e noeud en point de départ et 1er en arrivé
+    chemin_other = grp.dijkstra(add_data[1])[1][add_data[0]]
+    win_other_way = same_values_between_2_lists(selected_nodes, chemin_other)
+
+    return win or win_other_way
+
+
 def init_U_root_ABR():
     abr = generate_AB_graphe()
     abr.racine.value = "?"
@@ -58,22 +106,35 @@ def check_U_root_ABR(_, add_data, answer):
             return True
     return False
 
+def init_U_cycle_GRP():
+    grp = generate_graphe()
+    return grp, None
+
+def check_U_cycle_GRP(grp, _, answer):
+    real_deal = grp.parcours_profondeur_cycle()
+    if answer.isdigit():
+        if int(answer) == real_deal:
+            return True
+    return False
+
 class Graphe_Screen(Graphe):
 
     def render(self, screen, tileset, offsX, offsY, font):
-        self.racine.parcours_largeur(func=lambda node, _: node.render(screen, tileset, offsX, offsY, font))
-
+        cmds = self.racine.parcours_largeur(func=lambda node, retval: retval + node.render_arrow_and_get_node_command(screen, tileset, offsX, offsY, font), base_retval_value=[])
+        for cmd in cmds:
+            screen.blit(*cmd)
 
 class Noeud_Minijeu(Noeud):
-    def __init__(self, value, links=None):
+    def __init__(self, value, links=None, x=0, y=0):
         super().__init__(value, links)
         self.selected_by_player = False
         self.selected_by_game = False
         self.empty = False
-        self.x = 0
-        self.y = 0
+        self.x = x
+        self.y = y
 
-    def render(self, screen, tileset, offsX, offsY, font):
+    def render_arrow_and_get_node_command(self, screen, tileset, offsX, offsY, font):
+        node_commands = []
 
         tile = tileset.get_tile(0, 0)
         if self.selected_by_player:
@@ -87,20 +148,27 @@ class Noeud_Minijeu(Noeud):
             draw_arrow(screen, 0xAAAAAA, 3, 10, (self.x + 16 + offsX, self.y + 16 + offsY),
                        (neighbour_dist[0].x + 16  + offsX, neighbour_dist[0].y + 16 + offsY))
 
-        screen.blit(tile, (self.x + offsX, self.y + offsY))
-        screen.blit(font.render(str(self.value), False, (0, 0, 0)), (self.x + offsX + 8, self.y + offsY + 8))
-
+        node_commands.append((tile, (self.x + offsX, self.y + offsY)))
+        node_commands.append((font.render(str(self.value), False, (0, 0, 0)), (self.x + offsX + 8, self.y + offsY + 8)))
+        return node_commands
+    
+    def check_clicked(self, eHndl, offsX, offsY):
+        click = False
+        if eHndl.mouse_press:
+            if not (eHndl.mouse_press_pos[0] < (self.x + offsX) or eHndl.mouse_press_pos[0] > (self.x + offsX + 32) or  eHndl.mouse_press_pos[1] < (self.y + offsY) or eHndl.mouse_press_pos[1] > (self.y + offsY + 32)):
+                click = True
+                self.selected_by_player = not self.selected_by_player
+        return click
 
 class Mini_Jeux:
     def __init__(self, tileset, func_init, func_check, 
-                 func_additional_render=None, qst="", is_tree=False):
+                 qst="", is_tree=False):
                      
         self.is_tree = is_tree
         self.tileset = tileset
         self.graphe, self.additional_data = func_init()
         self.question = qst
         self.func_check = func_check
-        self.func_additional_render = func_additional_render
         self.screen_offs = [0,0]
 
     def set_AB_xy(self):
@@ -142,10 +210,13 @@ class Mini_Jeux:
         is_answering = False
         font = pygame.font.Font("RG.ttf",size=12)
         answer = ""
-        self.set_AB_xy()
+        if self.is_tree:
+            self.set_AB_xy()
         while loop:
         
             msg_key = eHndl.update()
+            for node in self.graphe.liste_noeuds:
+                node.check_clicked(eHndl, *self.screen_offs)
 
             if msg_key == "QUIT":
                 loop = False
@@ -265,15 +336,52 @@ class ABR(Graphe_Screen):
 def generate_AB_graphe(ranges=(0, 50)):
     noeud = Noeud_Minijeu((ranges[1] - ranges[0]) // 2)
     abr = ABR(noeud)
-    for i in range(randint(8, 12)):
+    for _ in range(randint(8, 12)):
         abr.insert_into_abr(Noeud_Minijeu(randint(*ranges)))
     return abr
 
+def generate_graphe(ranges=(0, 50)):
+    nodes = []
+    for _ in range(randint(10, 15)):
+        loop = True
+        while loop:
+            # Evite d'avoir 2 noeuds de meme coordonnées
+            coords = (randint(0, 5), randint(0, 5))
+            leave = True
+            for noeud in nodes:
+                if noeud.x == coords[0] and noeud.y == coords[1]:
+                    leave = False
+            if leave:
+                loop = False
+        nodes.append(Noeud_Minijeu(randint(*ranges), x=coords[0], y=coords[1]))
+
+    for node in nodes:
+        #Scaling and centering on the base screen
+        node.x *= 96
+        node.x += randint(0, 48)
+        node.y *= 96
+        node.y += randint(0, 48) 
+
+        node.x += (SCR_X - (5 * 96 + 48 + 32)) // 2
+        node.y += (SCR_Y - (5 * 96 + 48 + 32)) // 2
+
+    for node in nodes:
+        for potential_neigh in nodes:
+            if potential_neigh != node and distance2((node.x, node.y), (potential_neigh.x, potential_neigh.y)) < (148 ** 2):
+                
+                dist = sqrt(distance2((node.x, node.y), (potential_neigh.x, potential_neigh.y)))
+                
+                if not node.node_linked(potential_neigh) and len(node.links) < 3:
+                    node.links.append((potential_neigh, dist))
+                if not potential_neigh.node_linked(node) and len(potential_neigh.links) < 3:
+                    potential_neigh.links.append((node, dist))
+                    
+    return Graphe_Screen(nodes[0])
 
 
-MINIGAMES = {"F": ["Somme voisin", Mini_Jeux(Tileset("graphics/mini_node.png"), init_F_somme_ABR, check_F_somme_ABR, qst="Quelle est la somme des valeurs des noeuds du sous-arbre dont la racine est sélectionnée ?")],
-             "B": ["Chemin court", Mini_Jeux(Tileset("graphics/mini_node.png"), init_B_insert_ABR, check_B_insert_ABR, qst="Que pourrait être la valeur du noeud vide ?")],
-             "U": ["Cycle", Mini_Jeux(Tileset("graphics/mini_node.png"), init_U_root_ABR, check_U_root_ABR, qst="Que pourrait être la valeur de la racine ?")]}
+MINIGAMES = {"F": [Mini_Jeux(Tileset("graphics/mini_node.png"), init_F_somme_GRP, check_F_somme_GRP, "Quelle est la somme des valeurs du noeud sélectionnée et de ses voisins ?", False), Mini_Jeux(Tileset("graphics/mini_node.png"), init_F_somme_ABR, check_F_somme_ABR, "Quelle est la somme des valeurs des noeuds du sous-arbre dont la racine est sélectionnée ?", True)],
+             "B": [Mini_Jeux(Tileset("graphics/mini_node.png"), init_B_dist_GRP, check_B_dist_GRP, "Choisissez avec la souris les noeuds du chemin le plus court entre les 2 noeuds selectionnés.", False), Mini_Jeux(Tileset("graphics/mini_node.png"), init_B_insert_ABR, check_B_insert_ABR, "Que pourrait être la valeur du noeud vide ?", True)],
+             "U": [Mini_Jeux(Tileset("graphics/mini_node.png"), init_U_cycle_GRP, check_U_cycle_GRP, "Combien y a-t-il de cycle dans ce graphe ?", False), Mini_Jeux(Tileset("graphics/mini_node.png"), init_U_root_ABR, check_U_root_ABR, "Que pourrait être la valeur de la racine ?", True)]}
 
 
 if __name__ == "__main__":
@@ -286,6 +394,6 @@ if __name__ == "__main__":
     fenetre = base.initialise_window("a")
     eHndl = base.EventHandler(400, 50)
 
-    mini = MINIGAMES["B"][1]
+    mini = MINIGAMES["U"][0]
     
     print(mini.mini_game_loop(fenetre, clock, eHndl))
