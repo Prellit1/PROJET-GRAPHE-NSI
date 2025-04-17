@@ -10,7 +10,9 @@ Version : 1.0
 # '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 import pygame
+from pygame.draw import polygon, line
 from pygame.locals import *
+from math import sqrt
 
 SCR_X = 768
 SCR_Y = 512
@@ -43,7 +45,7 @@ class EventHandler:
             if ev.type == QUIT:
                 retVal = "QUIT"    
             elif ev.type == KEYDOWN:
-                self.press_repeat[ev.key] = True
+                self.press_repeat[ev.key] = (True, ev.unicode)
             elif ev.type == MOUSEBUTTONDOWN:
                 self.mouse_down = True
                 self.mouse_press_pos = ev.pos
@@ -95,3 +97,18 @@ def initialise_window(title: str):
     pygame.init()
     pygame.display.set_caption(title)
     return pygame.display.set_mode((SCR_X, SCR_Y))
+
+def draw_arrow(surface, color, width, head_width, coords1, coords2):
+    line(surface, color, coords1, coords2, width)
+    vector = (coords2[0] - coords1[0], coords2[1] - coords1[1])
+    vec_orth = (-vector[1], vector[0])
+    dist = sqrt(distance2(coords1, coords2))
+    vec_orth = (vec_orth[0] / dist, vec_orth[1] / dist)
+    vector = (vector[0] / dist, vector[1] / dist)
+    points = [coords2,
+               (int(coords2[0] - 3 * head_width * vector[0] + head_width * vec_orth[0]),
+                 int(coords2[1] - 3 * head_width * vector[1] + head_width * vec_orth[1])),
+               (int(coords2[0] - 3 * head_width * vector[0] - head_width * vec_orth[0]),
+                 int(coords2[1] - 3 * head_width * vector[1] - head_width * vec_orth[1]))
+            ]
+    polygon(surface, color, points)
