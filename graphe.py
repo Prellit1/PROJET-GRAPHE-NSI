@@ -44,7 +44,7 @@ class Noeud:
         return cycle
 
     def __repr__(self):
-        return str(self.value)
+        return str(self.value) + " | " + str(id(self)) + " | " + str(type(self))
     
     
 class Graphe:

@@ -133,4 +133,13 @@ def same_values_between_2_lists(l1, l2):
         if elem not in l1:
             return False
     return True
+
+def loadBG(file):
+    """
+    Entrée: String representant un fichier image
+    Sortie: Surface contenant une image
+    Role: renvoie une surface contenant l'arrière plan du menu contenant l'image File
+    Version : 1.0
+    """
+    return pygame.image.load(file)
         

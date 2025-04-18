@@ -1,8 +1,10 @@
-from graphe import Noeud, Graphe
+from graphe import Noeud
+from graphe_graphics import Noeud_Screen, Graphe_Screen
 from random import randint
-from base import SCR_X, SCR_Y, draw_arrow, distance2, same_values_between_2_lists
-from pygame import K_BACKSPACE, K_LEFT, K_RIGHT, K_UP, K_DOWN, K_RETURN, K_ESCAPE, Rect, Surface, SRCALPHA
-from math import sqrt
+from base import SCR_X, SCR_Y, same_values_between_2_lists
+from pygame import K_BACKSPACE, K_LEFT, K_RIGHT, K_UP, K_DOWN, K_RETURN, K_ESCAPE, Surface, SRCALPHA, display
+from pygame.font import Font
+from carte import generate_graphe
 from tile import Tileset
 
 def init_F_somme_ABR():
@@ -19,7 +21,8 @@ def check_F_somme_ABR(_, add_data, answer):
     return False
 
 def init_F_somme_GRP():
-    grp = generate_graphe()
+    grp = generate_graphe_minijeu()
+    #print(grp.liste_noeuds)
     random = randint(0, len(grp.liste_noeuds) - 1)
     node = grp.liste_noeuds[random]
     node.selected_by_game = True
@@ -57,9 +60,9 @@ def check_B_insert_ABR(abr, add_data, answer):
     return False
 
 def init_B_dist_GRP():
-    grp = generate_graphe()
+    grp = generate_graphe_minijeu()
     while len(grp.liste_noeuds) < 5:
-        grp = generate_graphe()
+        grp = generate_graphe_minijeu()
     random = randint(0, len(grp.liste_noeuds) - 1)
     node = grp.liste_noeuds[random]
     node.selected_by_game = True
@@ -107,7 +110,7 @@ def check_U_root_ABR(_, add_data, answer):
     return False
 
 def init_U_cycle_GRP():
-    grp = generate_graphe()
+    grp = generate_graphe_minijeu()
     return grp, None
 
 def check_U_cycle_GRP(grp, _, answer):
@@ -117,48 +120,12 @@ def check_U_cycle_GRP(grp, _, answer):
             return True
     return False
 
-class Graphe_Screen(Graphe):
-
-    def render(self, screen, tileset, offsX, offsY, font):
-        cmds = self.racine.parcours_largeur(func=lambda node, retval: retval + node.render_arrow_and_get_node_command(screen, tileset, offsX, offsY, font), base_retval_value=[])
-        for cmd in cmds:
-            screen.blit(*cmd)
-
-class Noeud_Minijeu(Noeud):
+class Noeud_Minijeu(Noeud_Screen):
     def __init__(self, value, links=None, x=0, y=0):
-        super().__init__(value, links)
+        super().__init__(value, links, x, y)
         self.selected_by_player = False
         self.selected_by_game = False
         self.empty = False
-        self.x = x
-        self.y = y
-
-    def render_arrow_and_get_node_command(self, screen, tileset, offsX, offsY, font):
-        node_commands = []
-
-        tile = tileset.get_tile(0, 0)
-        if self.selected_by_player:
-            tile = tileset.get_tile(0, 1)
-        elif self.selected_by_game:
-            tile = tileset.get_tile(1, 0)
-        elif self.empty:
-            tile = tileset.get_tile(1, 1)
-
-        for neighbour_dist in self.links:
-            draw_arrow(screen, 0xAAAAAA, 3, 10, (self.x + 16 + offsX, self.y + 16 + offsY),
-                       (neighbour_dist[0].x + 16  + offsX, neighbour_dist[0].y + 16 + offsY))
-
-        node_commands.append((tile, (self.x + offsX, self.y + offsY)))
-        node_commands.append((font.render(str(self.value), False, (0, 0, 0)), (self.x + offsX + 8, self.y + offsY + 8)))
-        return node_commands
-    
-    def check_clicked(self, eHndl, offsX, offsY):
-        click = False
-        if eHndl.mouse_press:
-            if not (eHndl.mouse_press_pos[0] < (self.x + offsX) or eHndl.mouse_press_pos[0] > (self.x + offsX + 32) or  eHndl.mouse_press_pos[1] < (self.y + offsY) or eHndl.mouse_press_pos[1] > (self.y + offsY + 32)):
-                click = True
-                self.selected_by_player = not self.selected_by_player
-        return click
 
 class Mini_Jeux:
     def __init__(self, tileset, func_init, func_check, 
@@ -166,8 +133,8 @@ class Mini_Jeux:
                      
         self.is_tree = is_tree
         self.tileset = tileset
-        self.graphe, self.additional_data = func_init()
         self.question = qst
+        self.func_init = func_init
         self.func_check = func_check
         self.screen_offs = [0,0]
 
@@ -180,7 +147,7 @@ class Mini_Jeux:
         self.graphe.set_abr_xy_coords(width_center, start_height)
     
     def render(self, screen, font):
-        self.graphe.render(screen, self.tileset, *self.screen_offs, font)
+        self.graphe.render(screen, self.tileset, *self.screen_offs, font, lambda node, tileset: tileset.get_tile(1, 1) if node.empty else tileset.get_tile(0, 1) if node.selected_by_player else tileset.get_tile(1,0) if node.selected_by_game else tileset.get_tile(0,0) ) 
 
     def handle_move_command(self, eHndl):
         MSG = "OK"
@@ -204,24 +171,27 @@ class Mini_Jeux:
             MSG = "CANCEL_ANSWER"
         return MSG
 
-    def mini_game_loop(self, screen, clock, eHndl):
+    def mini_game_loop(self, clock, screen, eHndl, player):
+        msg = "Quit"
+        self.graphe, self.additional_data = self.func_init()
         loop = True
         win = False
         is_answering = False
-        font = pygame.font.Font("RG.ttf",size=12)
+        font = Font("RG.ttf",size=12)
         answer = ""
         if self.is_tree:
             self.set_AB_xy()
+
         while loop:
-        
             msg_key = eHndl.update()
             for node in self.graphe.liste_noeuds:
-                node.check_clicked(eHndl, *self.screen_offs)
+                if node.check_clicked(eHndl, *self.screen_offs):
+                    node.selected_by_player = not node.selected_by_player
 
             if msg_key == "QUIT":
                 loop = False
 
-            msg = self.handle_move_command(eHndl)
+            msg_ans = self.handle_move_command(eHndl)
             screen.fill((0, 0, 0))
             self.render(screen, font)
             
@@ -232,28 +202,33 @@ class Mini_Jeux:
 
                 if eHndl.press_repeat.get(K_RETURN):
                     win = self.func_check(self.graphe, self.additional_data, answer)
+                    msg = "MAP"
                     loop = False
+                    
                 elif eHndl.press_repeat.get(K_BACKSPACE):
                     if len(answer):
                         answer = answer[:-1]
                 else:
                     for key in eHndl.press_repeat.keys():
-                        answer += eHndl.press_repeat[key][1]
+                        if key != K_ESCAPE:
+                            answer += eHndl.press_repeat[key][1]
                 txt_render = font.render(answer, False, (255, 255, 255))
                 screen.blit(txt_render, (abs(txt_render.get_rect().w - SCR_X) // 2, abs(txt_render.get_rect().h - abs(300 - SCR_Y)) // 2 + 300))
                 qst_render = font.render(self.question, False, (255, 255, 255))
                 screen.blit(qst_render, (abs(qst_render.get_rect().w - SCR_X) // 2, 300))
                     
 
-            if msg == "ANSWER" and not is_answering:
+            if msg_ans == "ANSWER" and not is_answering:
                 is_answering = True
 
-            elif is_answering and msg == "CANCEL_ANSWER":
+            elif is_answering and msg_ans == "CANCEL_ANSWER":
                 is_answering = False
 
-            pygame.display.flip()
+            display.flip()
             clock.tick(60)
-        return win
+        if win:
+            player.get_pay()
+        return msg
 
         
 class ABR(Graphe_Screen):
@@ -340,43 +315,11 @@ def generate_AB_graphe(ranges=(0, 50)):
         abr.insert_into_abr(Noeud_Minijeu(randint(*ranges)))
     return abr
 
-def generate_graphe(ranges=(0, 50)):
-    nodes = []
-    for _ in range(randint(10, 15)):
-        loop = True
-        while loop:
-            # Evite d'avoir 2 noeuds de meme coordonnées
-            coords = (randint(0, 5), randint(0, 5))
-            leave = True
-            for noeud in nodes:
-                if noeud.x == coords[0] and noeud.y == coords[1]:
-                    leave = False
-            if leave:
-                loop = False
-        nodes.append(Noeud_Minijeu(randint(*ranges), x=coords[0], y=coords[1]))
-
-    for node in nodes:
-        #Scaling and centering on the base screen
-        node.x *= 96
-        node.x += randint(0, 48)
-        node.y *= 96
-        node.y += randint(0, 48) 
-
-        node.x += (SCR_X - (5 * 96 + 48 + 32)) // 2
-        node.y += (SCR_Y - (5 * 96 + 48 + 32)) // 2
-
-    for node in nodes:
-        for potential_neigh in nodes:
-            if potential_neigh != node and distance2((node.x, node.y), (potential_neigh.x, potential_neigh.y)) < (148 ** 2):
-                
-                dist = sqrt(distance2((node.x, node.y), (potential_neigh.x, potential_neigh.y)))
-                
-                if not node.node_linked(potential_neigh) and len(node.links) < 3:
-                    node.links.append((potential_neigh, dist))
-                if not potential_neigh.node_linked(node) and len(potential_neigh.links) < 3:
-                    potential_neigh.links.append((node, dist))
-                    
-    return Graphe_Screen(nodes[0])
+def generate_graphe_minijeu(ranges=(0, 50)):
+    graphe = generate_graphe(Noeud_Minijeu, max_link_dist=148)
+    for node in graphe.liste_noeuds:
+        node.value = randint(*ranges)
+    return graphe
 
 
 MINIGAMES = {"F": [Mini_Jeux(Tileset("graphics/mini_node.png"), init_F_somme_GRP, check_F_somme_GRP, "Quelle est la somme des valeurs du noeud sélectionnée et de ses voisins ?", False), Mini_Jeux(Tileset("graphics/mini_node.png"), init_F_somme_ABR, check_F_somme_ABR, "Quelle est la somme des valeurs des noeuds du sous-arbre dont la racine est sélectionnée ?", True)],
@@ -388,12 +331,10 @@ if __name__ == "__main__":
     import pygame
     import base
 
-    abr = generate_AB_graphe()
-
     clock = pygame.time.Clock()
     fenetre = base.initialise_window("a")
     eHndl = base.EventHandler(400, 50)
 
-    mini = MINIGAMES["U"][0]
+    mini = MINIGAMES["F"][0]
     
-    print(mini.mini_game_loop(fenetre, clock, eHndl))
+    print(mini.mini_game_loop(clock, fenetre, eHndl))

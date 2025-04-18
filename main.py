@@ -1,78 +1,75 @@
-import graphe as g
 import carte
 import base
 import pygame
+import player
+import game_state
+from minigames import MINIGAMES
 from random import randint
 
-BUILD = [[0, (0, 2)], [1, (3, 4)], [2, (0, 4)]]
+MAP = carte.generate_carte()
 
-
-def generate_map() -> g.Graphe:
-    listeNoeud = []  
-    while len(listeNoeud) < 6 or len(listeNoeud) > 12:
-        listeNoeud = []  
-        for x in range(5):
-            for y in range(5):
-                if randint(0, 10) > 4:
-                    f, i, o = base.distance2((x, y), BUILD[0][1]), base.distance2((x, y), BUILD[1][1]), base.distance2((x, y), BUILD[2][1])
-                    if f < i and f < o:
-                        char = BUILD[0][0]
-                    elif i < f and i < o:
-                        char = BUILD[1][0]
-                    else:
-                        char = BUILD[2][0]
-
-                    listeNoeud.append(carte.Noeud_Carte(char, 
-                                                        ((x * 10 + randint(-3, 3)) * 8,
-                                                         (y * 10 + randint(-3, 3)) * 8)
-                                                        ))
-
-    for noeud in listeNoeud:
-        coords1 = noeud.coords
-
-        for other_noeud in listeNoeud:
-            if other_noeud != noeud:
-                already_connected_to_a_neighbour = False
-
-                for n in noeud.links:
-                    for linkID in range(len(n[0].links)):
-
-                        if other_noeud in n[0].links[linkID]:
-                            already_connected_to_a_neighbour = True
-                
-                coords2 = other_noeud.coords
-                dist2 = base.distance2(coords1, coords2)
-
-                if dist2 < 200**2 and not already_connected_to_a_neighbour:
-                    noeud.links += [(other_noeud, dist2)]
-                
-    racineID = randint(0, len(listeNoeud)-1)
-    # print(len(listeNoeud))
-    # print(listeNoeud[racineID].links)
-    listeNoeud[racineID].value = 3
-    return g.Graphe(listeNoeud[racineID])
-
-
-# print(generate_map().parcours_largeur(func = lambda x, retval: retval + x.links, base_retval_value=[]))
-
-def main():
-    clock = pygame.time.Clock()
-    fenetre = base.initialise_window("a")
-    graphe = generate_map()
-    carte_graphe = carte.Carte(graphe)
-    eHndl = base.EventHandler(repeat=800)
-
+def map_state(clock:pygame.time.Clock, screen:pygame.Surface, eHndl:base.EventHandler, player:player.Player):
+    font = pygame.font.Font("RG.ttf",size=12)
+    msg = "Quit"
     loop = True
-    while loop:
 
+    while loop:
         if eHndl.update() == "QUIT":
             loop = False
 
-        fenetre.fill((0, 0, 0))
-        carte_graphe.render(fenetre)
+        for node in MAP.liste_noeuds:
+            if node.check_clicked(eHndl, 0, 0):
+                if node != player.current_node:
+                    player.move(node, MAP)
+                else:
+                    loop = False
+                    msg = player.get_node_type()
+                    # temp VVVV
+                    if msg == "H":
+                        msg = "F"
+
+        if eHndl.press_repeat.get(pygame.K_RETURN):
+            loop = False
+            msg = player.get_node_type()
+            # temp VVVV
+            if msg == "H":
+                msg = "F"
+
+        screen.fill((0, 64, 0))
+        
+        screen.blit(font.render("ENDURANCE : " + str(int(player.endurance)), False, (255, 255, 255)), (0,0))
+        screen.blit(font.render("MONEY : " + str(int(player.money)), False, (255, 255, 255)), (0,12))
+        screen.blit(font.render("SCORE : " + str(int(player.score)), False, (255, 255, 255)), (0,24))
+        MAP.render(screen, carte.TILESET, 0, 0, None, lambda node, tileset: tileset.get_tile(node.value % 2, node.value // 2))
+        player.render(screen)
+
         pygame.display.flip()
         clock.tick(60)
 
+    return msg
+
+
+STATES = game_state.State(("MAP", map_state),
+                          ("F", lambda clk, scr, eH, pl: MINIGAMES["F"][randint(0,1)].mini_game_loop(clk, scr, eH, pl)),
+                          ("B", lambda clk, scr, eH, pl: MINIGAMES["B"][randint(0,1)].mini_game_loop(clk, scr, eH, pl)),
+                          ("U", lambda clk, scr, eH, pl: MINIGAMES["U"][randint(0,1)].mini_game_loop(clk, scr, eH, pl)),
+                          )
+
+
+def main():
+    clock = pygame.time.Clock()
+    fenetre = base.initialise_window("Node Gaming")
+    
+    gamer = player.Player(MAP.racine)
+    eHndl = base.EventHandler(400, 50)
+
+    loop = True
+    msg = "MAP"
+    while loop:
+        msg = STATES.get_state(msg)(clock, fenetre, eHndl, gamer)
+        if msg == "Quit":
+            loop = False
+            pygame.quit()
 
 if __name__ == "__main__":
     main()
