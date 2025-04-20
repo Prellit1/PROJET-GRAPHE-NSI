@@ -1,6 +1,5 @@
-# Créé par Ethan CAPONE le 18/09 pour le projet Pacman
+"""Module permettant d'obtenir des cases graphiques (tile) avec une image grace a la classe Tileset"""
 from base import *
-from random import randint
 
 SIZE_TEX = 32
 

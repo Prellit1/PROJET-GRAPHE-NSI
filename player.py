@@ -2,18 +2,19 @@ from base import distance2
 from math import sqrt
 from tile import Tileset
 
-RENT = 30
+RENT = 60
 
 
 class Player:
     def __init__(self, home_node):
         self.endurance = 100
         self.max_endurance = 100
-        self.money = 100
+        self.money = 80
         self.score = 100
         self.gains = 10
         self.home_node = home_node
         self.current_node = home_node
+        self.status = "STILL"
         self.x = self.current_node.x
         self.y = self.current_node.y
         self.play_count = 0
@@ -67,6 +68,7 @@ class Player:
         addition = self.gains + sqrt(distance2((self.current_node.x, self.current_node.y), (self.home_node.x, self.home_node.y))) // 25
         self.score += addition
         self.money += addition
+        self.endurance -= addition // 2
     
     def render(self, screen, OffsX = 0, OffsY = 0):
         screen.blit(self.tileset.get_tile(0,0), (self.x + OffsX, self.y + OffsY - 32))

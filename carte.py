@@ -13,6 +13,12 @@ BUILD = [[0, (0 + OFFSX, 2 * 96 + OFFSY)], [1, (3 * 96 + OFFSX, 5 * 96 + OFFSY)]
 
         
 def generate_graphe(type_of_node=Noeud_Screen, range_node=(10, 15), max_links=3, max_link_dist=128):
+    """
+    ENTREE  : une classe de Noeud, un tuple interval, un entier et un reel
+    SORTIE  : un graphe_écran
+    ROLE    : crée un graphe affichable avec un nombre de noeud compris dans un intervalle et dont les noeud ont un nombre maximal de liaison et pour que 2 noeud soit lié il faut qu'il soit moins distant que la valeur de distance en parametre
+    Version : 2025APR_01 
+    """
     nodes = []
     for _ in range(randint(*range_node)):
         loop = True
@@ -51,6 +57,12 @@ def generate_graphe(type_of_node=Noeud_Screen, range_node=(10, 15), max_links=3,
     return Graphe_Screen(nodes[0])
 
 def generate_carte():
+    """
+    ENTREE  : ---
+    SORTIE  : un graphe
+    ROLE    : crée un graphe représentant la carte du jeu
+    Version : 2025APR_01 
+    """
     graphe = generate_graphe(range_node=(12,18))
     while len(graphe.liste_noeuds) < 12:
         graphe = generate_graphe(range_node=(12,18))
