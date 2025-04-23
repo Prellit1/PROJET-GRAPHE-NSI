@@ -84,7 +84,7 @@ def check_B_dist_GRP(grp, add_data, _):
             selected_nodes.append(node)
 
     # 1er noeud en point de départ et 2e en arrivé
-    chemin = grp.dijkstra(add_data[0])[1][add_data[1]]
+    chemin = grp.dijkstra(add_data[0])[1].get(add_data[1])
     win = same_values_between_2_lists(selected_nodes, chemin)
 
     # 2e noeud en point de départ et 1er en arrivé
@@ -188,6 +188,7 @@ class Mini_Jeux:
     def mini_game_loop(self, clock, screen, eHndl, player):
         msg = "Quit"
         self.graphe, self.additional_data = self.func_init()
+        self.screen_offs = [0, 0]
         loop = True
         win = False
         is_answering = False

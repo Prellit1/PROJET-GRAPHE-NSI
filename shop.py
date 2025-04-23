@@ -86,7 +86,7 @@ def shop_init():
     item5 = Noeud_Shop("Vie + à la mode", "Kanamei fait un peu trop attention à sa tenue.", (4, 0), 150, x=2, y=2)
     item6 = Noeud_Shop("Vie + sportive encore", "Kanamei fait + de sport.", (0, 10), 150, x=2, y=4)
     item7 = Noeud_Shop("Vie la + saine", "Kanamei est au top.", (4, 20), 200, x=4, y=2)
-    # Note de l'autrice/auteur/j'verrais en Juin, considérant que ce perso a été un moyen de me représenter, ce sont des scénarios irréalistes
+    # Note de l'autrice, considérant que ce perso a été un moyen de me représenter, ce sont des scénarios irréalistes
 
     item1.buy_status = BUYABLE
     item1.links = [(item2, 0), (item3, 0)] # Je garde le meme format pour les liaison

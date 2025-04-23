@@ -132,9 +132,9 @@ class Graphe:
             non_visite.remove(courant)
             for voisin, poid in courant.links:
                 if voisin in non_visite:
-                    nouvelle_distance = distance[courant] + poid
+                    nouvelle_distance = distance.get(courant, float("inf")) + poid
                     if nouvelle_distance < distance.get(voisin, float("inf")):
-                        chemin[voisin] = chemin[courant] + [courant]
+                        chemin[voisin] = chemin.get(courant, []) + [courant]
                         distance[voisin] = nouvelle_distance
         for n in chemin:
             chemin[n] += [n]
